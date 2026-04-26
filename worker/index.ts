@@ -87,6 +87,18 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
 
+    if (parts[1] === "health" && request.method === "GET") {
+      return jsonResponse({
+        ok: true,
+        bindings: {
+          ai: Boolean(env.AI),
+          aiRun: typeof env.AI?.run,
+          db: Boolean(env.DB),
+          assets: Boolean(env.ASSETS)
+        }
+      });
+    }
+
     if (parts[1] === "ai" && parts[2] === "edit" && request.method === "POST") {
       return jsonResponse(await handleAiEdit(request, env));
     }
@@ -154,6 +166,8 @@ async function handleAiEdit(request: Request, env: Env): Promise<EditResponse> {
       if (aiResult) {
         return aiResult;
       }
+
+      return fallbackEdit(editRequest, "Workers AI returned an empty or invalid JSON response.");
     } catch (error) {
       console.warn("Workers AI edit failed, using deterministic fallback.", error);
       return fallbackEdit(editRequest, "Workers AI was unavailable or returned invalid JSON.");
@@ -187,12 +201,51 @@ async function callWorkersAi(ai: WorkersAI, request: EditRequest): Promise<EditR
     max_tokens: 4096
   });
 
+  const structured = parseStructuredEditResponse(result, request.content);
+  if (structured) {
+    return structured;
+  }
+
   const text = extractAiText(result);
   if (!text) {
     return null;
   }
 
   return parseEditResponse(text, request.content);
+}
+
+function parseStructuredEditResponse(result: unknown, originalContent: string): EditResponse | null {
+  if (!isRecord(result)) {
+    return null;
+  }
+
+  if (looksLikeEditResponse(result)) {
+    return normalizeEditResponse(result, originalContent);
+  }
+
+  for (const key of ["response", "result", "message", "content"]) {
+    const value = result[key];
+    const parsed = parseStructuredEditResponse(value, originalContent);
+    if (parsed) {
+      return parsed;
+    }
+  }
+
+  const choices = result.choices;
+  if (Array.isArray(choices)) {
+    for (const choice of choices) {
+      const parsed = parseStructuredEditResponse(choice, originalContent);
+      if (parsed) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
+function looksLikeEditResponse(value: Record<string, unknown>): boolean {
+  return "updatedContent" in value || "summary" in value || "issues" in value;
 }
 
 function getModeGuidance(mode: AiMode): string {
@@ -625,6 +678,26 @@ function extractAiText(result: unknown): string {
     }
   }
 
+  const nestedResult = result.result;
+  if (nestedResult) {
+    return extractAiText(nestedResult);
+  }
+
+  const choices = result.choices;
+  if (Array.isArray(choices)) {
+    for (const choice of choices) {
+      const text = extractAiText(choice);
+      if (text) {
+        return text;
+      }
+    }
+  }
+
+  const message = result.message;
+  if (message) {
+    return extractAiText(message);
+  }
+
   return "";
 }
 
@@ -784,4 +857,3 @@ function jsonResponse(data: unknown, init: ResponseInit = {}): Response {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
