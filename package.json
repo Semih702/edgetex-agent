@@ -1,0 +1,30 @@
+{
+  "name": "edgetex-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n vite,worker -c cyan,magenta \"vite --host 0.0.0.0\" \"wrangler dev --local --port 8787\"",
+    "build": "npm run typecheck && vite build",
+    "deploy": "npm run build && wrangler deploy",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json",
+    "db:migrate:local": "wrangler d1 migrations apply edgetex-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply edgetex-db --remote"
+  },
+  "dependencies": {
+    "lucide-react": "^1.11.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260426.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "wrangler": "^4.85.0"
+  }
+}
+

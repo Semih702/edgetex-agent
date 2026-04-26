@@ -1,0 +1,285 @@
+import { useEffect, useMemo, useState } from "react";
+import { ActionBar } from "./components/ActionBar";
+import { ChatPanel } from "./components/ChatPanel";
+import { EditorPanel } from "./components/EditorPanel";
+import { PreviewPanel } from "./components/PreviewPanel";
+import {
+  createDocument,
+  createMessage,
+  editWithAi,
+  getDocument,
+  getMessages,
+  listDocuments,
+  updateDocument
+} from "./lib/api";
+import { inferDocumentTitle, parseLatexPreview } from "./lib/preview";
+import type { AiMode, ChatMessage, DocumentRecord, EditResponse } from "./types";
+
+const LAST_DOCUMENT_KEY = "edgetex:last-document-id";
+
+const DEFAULT_DOCUMENT = String.raw`\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{Edge Computing for Scientific Collaboration}
+\author{EdgeTex Agent}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Cloudflare Workers make it possible to build lightweight applications close to users. This draft explores how an AI-assisted LaTeX editor can support academic writing without becoming a full compilation environment.
+
+\subsection{Motivation}
+Researchers often need help turning rough notes into structured prose. An editor that combines direct LaTeX editing with a chat workflow can help users generate sections, improve tone, and catch formatting issues.
+
+\section{Approach}
+The system stores documents and chat history in D1, routes edit requests through a Worker, and uses Workers AI when it is available. Inline math such as $E = mc^2$ is shown as a lightweight text preview.
+
+\section{Conclusion}
+EdgeTex Agent focuses on fast AI-assisted drafting and review while leaving full PDF compilation outside the MVP scope.
+
+\end{document}`;
+
+const modePrefix: Record<AiMode, string> = {
+  generate: "Generate LaTeX",
+  improve: "Improve Writing",
+  fix: "Fix LaTeX",
+  academic: "Make Academic",
+  review: "Review Formatting"
+};
+
+function App() {
+  const [content, setContent] = useState(DEFAULT_DOCUMENT);
+  const [documentId, setDocumentId] = useState<string | null>(null);
+  const [documentTitle, setDocumentTitle] = useState("Sample Document");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [instruction, setInstruction] = useState("");
+  const [mode, setMode] = useState<AiMode>("improve");
+  const [isBusy, setIsBusy] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(true);
+  const [status, setStatus] = useState("Sample loaded");
+  const [error, setError] = useState<string | null>(null);
+
+  const previewBlocks = useMemo(() => parseLatexPreview(content), [content]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function boot() {
+      try {
+        const { documents } = await listDocuments();
+        const lastId = window.localStorage.getItem(LAST_DOCUMENT_KEY);
+        const selected = documents.find((document) => document.id === lastId) ?? documents[0];
+
+        if (!selected || ignore) {
+          return;
+        }
+
+        const { document } = await getDocument(selected.id);
+        const { messages: savedMessages } = await getMessages(selected.id);
+
+        if (ignore) {
+          return;
+        }
+
+        applyDocument(document);
+        setMessages(savedMessages);
+        setIsDirty(false);
+        setStatus("Loaded saved document");
+      } catch (bootError) {
+        if (!ignore) {
+          setStatus("Sample loaded");
+          setError(readErrorMessage(bootError, "Could not load saved documents."));
+        }
+      }
+    }
+
+    void boot();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  function applyDocument(document: DocumentRecord) {
+    setDocumentId(document.id);
+    setDocumentTitle(document.title);
+    setContent(document.content);
+    window.localStorage.setItem(LAST_DOCUMENT_KEY, document.id);
+  }
+
+  function handleContentChange(nextContent: string) {
+    setContent(nextContent);
+    setDocumentTitle(inferDocumentTitle(nextContent));
+    setIsDirty(true);
+  }
+
+  async function handleSave() {
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const title = inferDocumentTitle(content);
+      const result = documentId
+        ? await updateDocument(documentId, { title, content })
+        : await createDocument({ title, content });
+
+      applyDocument(result.document);
+      setIsDirty(false);
+      setStatus("Document saved");
+    } catch (saveError) {
+      setError(readErrorMessage(saveError, "Could not save document."));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function ensureSavedDocument(): Promise<string> {
+    if (documentId) {
+      return documentId;
+    }
+
+    const title = inferDocumentTitle(content);
+    const { document } = await createDocument({ title, content });
+    applyDocument(document);
+    setIsDirty(false);
+    return document.id;
+  }
+
+  async function handleSend() {
+    const cleanInstruction = instruction.trim() || defaultInstruction(mode);
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: `${modePrefix[mode]}: ${cleanInstruction}`,
+      createdAt: new Date().toISOString()
+    };
+
+    setIsBusy(true);
+    setError(null);
+    setMessages((current) => [...current, userMessage]);
+
+    try {
+      const savedDocumentId = await ensureSavedDocument();
+      await createMessage({
+        documentId: savedDocumentId,
+        role: "user",
+        content: userMessage.content
+      });
+
+      const response = await editWithAi({
+        documentId: savedDocumentId,
+        content,
+        instruction: cleanInstruction,
+        mode
+      });
+
+      if (response.updatedContent) {
+        setContent(response.updatedContent);
+        setDocumentTitle(inferDocumentTitle(response.updatedContent));
+        setIsDirty(true);
+      }
+
+      const assistantContent = formatAssistantResponse(response);
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        documentId: savedDocumentId,
+        role: "assistant",
+        content: assistantContent,
+        createdAt: new Date().toISOString()
+      };
+
+      setMessages((current) => [...current, assistantMessage]);
+      await createMessage({
+        documentId: savedDocumentId,
+        role: "assistant",
+        content: assistantContent
+      });
+
+      setInstruction("");
+      setStatus("AI edit complete");
+    } catch (sendError) {
+      setError(readErrorMessage(sendError, "Could not complete the AI edit."));
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <div>
+          <h1>EdgeTex Agent</h1>
+          <p>{documentTitle}</p>
+        </div>
+        <div className="status-stack">
+          <span className={isDirty ? "status-dot dirty" : "status-dot"} />
+          <span>{status}</span>
+        </div>
+      </header>
+
+      <ActionBar
+        isBusy={isBusy}
+        isDirty={isDirty}
+        isSaving={isSaving}
+        mode={mode}
+        onModeChange={setMode}
+        onSave={handleSave}
+      />
+
+      {error ? <div className="error-banner">{error}</div> : null}
+
+      <main className="workspace-grid">
+        <EditorPanel content={content} onChange={handleContentChange} />
+        <PreviewPanel blocks={previewBlocks} />
+        <ChatPanel
+          instruction={instruction}
+          isBusy={isBusy}
+          messages={messages}
+          mode={mode}
+          onInstructionChange={setInstruction}
+          onSend={handleSend}
+        />
+      </main>
+    </div>
+  );
+}
+
+function formatAssistantResponse(response: EditResponse): string {
+  const issues =
+    response.issues.length > 0
+      ? `\nIssues:\n${response.issues.map((issue) => `- ${issue}`).join("\n")}`
+      : "\nIssues:\n- None reported.";
+
+  return `${response.summary}${issues}`;
+}
+
+function defaultInstruction(mode: AiMode): string {
+  if (mode === "generate") {
+    return "Generate a concise LaTeX article skeleton.";
+  }
+
+  if (mode === "fix") {
+    return "Fix obvious LaTeX syntax problems while preserving meaning.";
+  }
+
+  if (mode === "academic") {
+    return "Make the writing more academic while preserving structure.";
+  }
+
+  if (mode === "review") {
+    return "Review formatting, clarity, structure, LaTeX syntax, readability, and academic tone.";
+  }
+
+  return "Improve writing clarity and flow while preserving the document.";
+}
+
+function readErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+export default App;
+
