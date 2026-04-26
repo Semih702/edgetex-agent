@@ -1,4 +1,4 @@
-import { SendHorizontal } from "lucide-react";
+import { CheckCircle2, CircleAlert, SendHorizontal } from "lucide-react";
 import type { AiMode, ChatMessage } from "../types";
 
 interface ChatPanelProps {
@@ -42,7 +42,7 @@ export function ChatPanel({
           messages.map((message) => (
             <div className={`message ${message.role}`} key={message.id}>
               <span className="message-role">{message.role}</span>
-              <p>{message.content}</p>
+              <MessageContent message={message} />
             </div>
           ))
         )}
@@ -53,8 +53,11 @@ export function ChatPanel({
           aria-label="Assistant instruction"
           onChange={(event) => onInstructionChange(event.target.value)}
           onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-              onSend();
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              if (!isBusy) {
+                onSend();
+              }
             }
           }}
           placeholder="Describe the edit..."
@@ -75,3 +78,82 @@ export function ChatPanel({
   );
 }
 
+function MessageContent({ message }: { message: ChatMessage }) {
+  if (message.role !== "assistant") {
+    return <p>{message.content}</p>;
+  }
+
+  const response = parseAssistantResponse(message.content);
+  if (!response) {
+    return <p>{message.content}</p>;
+  }
+
+  return (
+    <div className="assistant-response">
+      <p>{response.summary}</p>
+      {response.issues.length > 0 ? (
+        <div className="issues-block">
+          <div className="issues-heading">
+            <CircleAlert aria-hidden="true" size={15} />
+            <span>Issues</span>
+          </div>
+          <ul>
+            {response.issues.map((issue, index) => (
+              <li key={`${issue}-${index}`}>{issue}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="no-issues">
+          <CheckCircle2 aria-hidden="true" size={15} />
+          <span>No issues found</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function parseAssistantResponse(content: string): { summary: string; issues: string[] } | null {
+  try {
+    const parsed = JSON.parse(content) as {
+      kind?: string;
+      summary?: unknown;
+      issues?: unknown;
+    };
+
+    if (parsed.kind === "edgetex-ai-response" && typeof parsed.summary === "string") {
+      return {
+        summary: parsed.summary,
+        issues: normalizeIssues(parsed.issues)
+      };
+    }
+  } catch {
+    // Older saved messages were stored as plain text; parse them below.
+  }
+
+  const legacyMatch = content.match(/^(?<summary>[\s\S]*?)\nIssues:\n(?<issues>[\s\S]*)$/u);
+  if (!legacyMatch?.groups) {
+    return null;
+  }
+
+  const issues = legacyMatch.groups.issues
+    .split("\n")
+    .map((issue) => issue.replace(/^-\s*/u, "").trim())
+    .filter((issue) => issue && !/^none reported\.?$/iu.test(issue));
+
+  return {
+    summary: legacyMatch.groups.summary.trim(),
+    issues
+  };
+}
+
+function normalizeIssues(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((issue): issue is string => typeof issue === "string")
+    .map((issue) => issue.trim())
+    .filter(Boolean);
+}

@@ -160,6 +160,7 @@ function App() {
 
     setIsBusy(true);
     setError(null);
+    setInstruction("");
     setMessages((current) => [...current, userMessage]);
 
     try {
@@ -199,7 +200,6 @@ function App() {
         content: assistantContent
       });
 
-      setInstruction("");
       setStatus("AI edit complete");
     } catch (sendError) {
       setError(readErrorMessage(sendError, "Could not complete the AI edit."));
@@ -249,12 +249,11 @@ function App() {
 }
 
 function formatAssistantResponse(response: EditResponse): string {
-  const issues =
-    response.issues.length > 0
-      ? `\nIssues:\n${response.issues.map((issue) => `- ${issue}`).join("\n")}`
-      : "\nIssues:\n- None reported.";
-
-  return `${response.summary}${issues}`;
+  return JSON.stringify({
+    kind: "edgetex-ai-response",
+    summary: response.summary,
+    issues: response.issues
+  });
 }
 
 function defaultInstruction(mode: AiMode): string {
@@ -282,4 +281,3 @@ function readErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default App;
-
