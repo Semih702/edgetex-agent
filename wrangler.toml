@@ -15,5 +15,5 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "edgetex-db"
-database_id = "00000000-0000-0000-0000-000000000000" # Replace with the ID returned by `wrangler d1 create edgetex-db`.
+database_id = "41e2ae38-d01a-4dec-af2f-0bec793d0bb2" # Replace with the ID returned by `wrangler d1 create edgetex-db`.
 
