@@ -332,6 +332,54 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+.assistant-response {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.issues-block {
+  background: #fffaf3;
+  border: 1px solid #ead7b8;
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+
+.issues-heading {
+  align-items: center;
+  color: #845319;
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.issues-block ul {
+  margin: 0;
+  padding-left: 19px;
+}
+
+.issues-block li {
+  margin: 3px 0;
+  overflow-wrap: anywhere;
+}
+
+.no-issues {
+  align-items: center;
+  align-self: flex-start;
+  background: #e9f4f0;
+  border: 1px solid #c3ddd5;
+  border-radius: 999px;
+  color: #0f665f;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+  line-height: 1;
+  padding: 7px 9px;
+}
+
 .chat-input-row {
   border-top: 1px solid #e4e8e5;
   display: grid;
@@ -420,4 +468,3 @@ button:disabled {
     width: 100%;
   }
 }
-
