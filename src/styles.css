@@ -1,6 +1,6 @@
 :root {
   color: #22252b;
-  background: #f6f7f4;
+  background: #f3f4f2;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -34,7 +34,7 @@ button:disabled {
 
 .app-shell {
   min-height: 100vh;
-  padding: 18px;
+  padding: 14px;
 }
 
 .app-header {
@@ -42,19 +42,20 @@ button:disabled {
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  margin: 0 auto 14px;
+  margin: 0 auto 10px;
   max-width: 1680px;
 }
 
 .app-header h1 {
-  font-size: 24px;
+  font-size: 19px;
   line-height: 1.1;
   margin: 0;
 }
 
 .app-header p {
   color: #666b73;
-  margin: 4px 0 0;
+  font-size: 14px;
+  margin: 3px 0 0;
   overflow-wrap: anywhere;
 }
 
@@ -83,24 +84,33 @@ button:disabled {
 
 .action-bar {
   align-items: center;
+  background: #ffffff;
+  border: 1px solid #dfe4e1;
+  border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
-  margin: 0 auto 12px;
+  margin: 0 auto 10px;
   max-width: 1680px;
+  padding: 7px;
 }
 
 .file-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .action-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
+}
+
+.toolbar-cluster {
+  align-items: center;
+  display: flex;
 }
 
 .tool-button,
@@ -112,10 +122,10 @@ button:disabled {
   border-radius: 8px;
   color: #2b2f35;
   display: inline-flex;
-  gap: 7px;
+  gap: 6px;
   justify-content: center;
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: 32px;
+  padding: 6px 10px;
   transition:
     background 150ms ease,
     border-color 150ms ease,
@@ -124,19 +134,19 @@ button:disabled {
 }
 
 .document-select {
-  background: #ffffff;
-  min-height: 38px;
-  min-width: 240px;
-  padding: 8px 34px 8px 11px;
+  background: #fbfbfa;
+  min-height: 32px;
+  min-width: 260px;
+  padding: 6px 32px 6px 10px;
 }
 
 .compact-tool {
-  min-height: 34px;
-  padding: 7px 10px;
+  min-height: 32px;
+  padding: 6px 9px;
 }
 
 .tool-button {
-  background: #ffffff;
+  background: #fbfbfa;
 }
 
 .import-button {
@@ -154,14 +164,14 @@ button:disabled {
 
 .tool-button:hover,
 .tool-button.selected {
-  background: #e7f4f1;
-  border-color: #77b7ad;
-  color: #0d5f59;
+  background: #eef2ef;
+  border-color: #aeb8b2;
+  color: #1f3b35;
 }
 
 .save-button {
-  background: #22252b;
-  border-color: #22252b;
+  background: #20242a;
+  border-color: #20242a;
   color: #ffffff;
   flex: 0 0 auto;
 }
@@ -180,7 +190,7 @@ button:disabled {
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(320px, 1.15fr) minmax(320px, 0.95fr) minmax(300px, 0.72fr);
-  height: calc(100vh - 142px);
+  height: calc(100vh - 118px);
   margin: 0 auto;
   max-width: 1680px;
   min-height: 620px;
@@ -198,13 +208,14 @@ button:disabled {
 
 .panel-header {
   align-items: center;
+  background: #fbfbfa;
   border-bottom: 1px solid #e4e8e5;
   display: flex;
   flex: 0 0 auto;
   gap: 12px;
   justify-content: space-between;
-  min-height: 48px;
-  padding: 10px 12px;
+  min-height: 42px;
+  padding: 9px 12px;
 }
 
 .panel-header h2 {
@@ -214,7 +225,7 @@ button:disabled {
 }
 
 .latex-editor {
-  background: #fbfcfa;
+  background: #fdfdfc;
   border: 0;
   color: #20242a;
   flex: 1 1 auto;
@@ -306,10 +317,10 @@ button:disabled {
 }
 
 .mode-pill {
-  background: #edf5e7;
-  border: 1px solid #ccdcbc;
+  background: #f1f3ee;
+  border: 1px solid #d4dacd;
   border-radius: 999px;
-  color: #435b2b;
+  color: #465040;
   font-size: 12px;
   line-height: 1;
   padding: 6px 9px;

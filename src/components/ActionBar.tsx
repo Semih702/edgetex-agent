@@ -30,11 +30,11 @@ interface ActionBarProps {
 }
 
 const actions = [
-  { mode: "generate" as const, label: "Generate LaTeX", icon: Wand2 },
-  { mode: "improve" as const, label: "Improve Writing", icon: Sparkles },
-  { mode: "fix" as const, label: "Fix LaTeX", icon: Wrench },
-  { mode: "academic" as const, label: "Make Academic", icon: GraduationCap },
-  { mode: "review" as const, label: "Review Formatting", icon: ListChecks }
+  { mode: "generate" as const, label: "Generate", title: "Generate LaTeX", icon: Wand2 },
+  { mode: "improve" as const, label: "Improve", title: "Improve Writing", icon: Sparkles },
+  { mode: "fix" as const, label: "Fix", title: "Fix LaTeX", icon: Wrench },
+  { mode: "academic" as const, label: "Academic", title: "Make Academic", icon: GraduationCap },
+  { mode: "review" as const, label: "Review", title: "Review Formatting", icon: ListChecks }
 ];
 
 export function ActionBar({
@@ -54,7 +54,7 @@ export function ActionBar({
 }: ActionBarProps) {
   return (
     <div className="action-bar" aria-label="Document actions">
-      <div className="file-group" aria-label="File actions">
+      <div className="toolbar-cluster file-group" aria-label="File actions">
         <button
           className="tool-button compact-tool"
           disabled={isBusy || isSaving}
@@ -123,7 +123,7 @@ export function ActionBar({
         </select>
       </div>
 
-      <div className="action-group" role="group" aria-label="AI edit modes">
+      <div className="toolbar-cluster action-group" role="group" aria-label="AI edit modes">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
@@ -132,7 +132,7 @@ export function ActionBar({
               disabled={isBusy}
               key={action.mode}
               onClick={() => onModeChange(action.mode)}
-              title={action.label}
+              title={action.title}
               type="button"
             >
               <Icon aria-hidden="true" size={16} />
