@@ -129,6 +129,10 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       if (parts.length === 3 && request.method === "GET") {
         return jsonResponse(await listMessages(parts[2], env));
       }
+
+      if (parts.length === 3 && request.method === "DELETE") {
+        return jsonResponse(await deleteMessages(parts[2], env));
+      }
     }
 
     throw new ApiError(404, "Route not found.");
@@ -406,6 +410,18 @@ async function listMessages(documentId: string, env: Env) {
     .all<MessageRow>();
 
   return { messages: results.map(toMessageDto) };
+}
+
+async function deleteMessages(documentId: string, env: Env) {
+  const db = requireDb(env);
+  const result = await db
+    .prepare("DELETE FROM messages WHERE document_id = ?")
+    .bind(documentId)
+    .run();
+
+  return {
+    deleted: result.meta.changes ?? 0
+  };
 }
 
 function requireDb(env: Env): D1Database {

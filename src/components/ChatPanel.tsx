@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleAlert, SendHorizontal } from "lucide-react";
+import { CheckCircle2, CircleAlert, SendHorizontal, Trash2 } from "lucide-react";
 import type { AiMode, ChatMessage } from "../types";
 
 interface ChatPanelProps {
@@ -7,6 +7,7 @@ interface ChatPanelProps {
   instruction: string;
   isBusy: boolean;
   onInstructionChange: (value: string) => void;
+  onClearMessages: () => void;
   onSend: () => void;
 }
 
@@ -24,13 +25,26 @@ export function ChatPanel({
   instruction,
   isBusy,
   onInstructionChange,
+  onClearMessages,
   onSend
 }: ChatPanelProps) {
   return (
     <section className="panel chat-panel" aria-labelledby="chat-heading">
       <div className="panel-header">
         <h2 id="chat-heading">Assistant</h2>
-        <span className="mode-pill">{modeLabel[mode]}</span>
+        <div className="chat-header-actions">
+          <button
+            aria-label="Clear chat"
+            className="icon-button"
+            disabled={isBusy || messages.length === 0}
+            onClick={onClearMessages}
+            title="Clear chat"
+            type="button"
+          >
+            <Trash2 aria-hidden="true" size={15} />
+          </button>
+          <span className="mode-pill">{modeLabel[mode]}</span>
+        </div>
       </div>
 
       <div className="message-list" aria-live="polite">

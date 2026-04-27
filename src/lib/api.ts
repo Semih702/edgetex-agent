@@ -65,6 +65,12 @@ export async function getMessages(documentId: string): Promise<{ messages: ChatM
   );
 }
 
+export async function deleteMessages(documentId: string): Promise<{ deleted: number }> {
+  return apiRequest<{ deleted: number }>(`/api/messages/${encodeURIComponent(documentId)}`, {
+    method: "DELETE"
+  });
+}
+
 async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -94,4 +100,3 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   return response.json() as Promise<T>;
 }
-
