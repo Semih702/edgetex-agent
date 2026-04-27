@@ -2,12 +2,19 @@
 
 EdgeTex Agent is a lightweight AI-assisted LaTeX editor for the Cloudflare AI app assignment. It gives users a small Overleaf-style workspace with a LaTeX editor, a lightweight HTML preview, and a chat assistant that can generate, improve, fix, academicize, and review LaTeX documents through Cloudflare Worker API routes.
 
+## Project Notes
+
+I built this as a focused MVP rather than a full Overleaf clone. The main goal was to show a practical Cloudflare AI workflow: a user edits LaTeX, asks the assistant for a change, the Worker coordinates the request, Workers AI returns a structured edit, and D1 keeps the document and chat history around between sessions.
+
+I also spent time on the small product details that make the app feel usable: separating file actions from AI actions, adding import/download/export controls, keeping the three-pane editor inside one desktop viewport, replacing browser confirms with an in-app confirmation dialog, and adding a clear-chat action for the assistant panel.
+
 ## Assignment Alignment
 
 - LLM: Cloudflare Workers AI through the `AI` binding.
 - Workflow / coordination: Cloudflare Worker API routes orchestrate edit requests, JSON parsing, fallbacks, document persistence, and chat history.
 - User input: React + Vite editor, preview, action buttons, and chat UI.
 - Memory/state: Cloudflare D1 stores documents, chat messages, and preferences.
+- CI/CD: GitHub Actions runs the build and deploys the Worker on `main` pushes.
 
 ## Features
 
@@ -18,7 +25,9 @@ EdgeTex Agent is a lightweight AI-assisted LaTeX editor for the Cloudflare AI ap
 - Workers AI route with a strict JSON prompt and safe JSON parsing.
 - Deterministic local fallback when Workers AI is unavailable.
 - D1-backed document save/load and chat history.
+- Assistant chat history can be cleared per document.
 - Lightweight preview for `\title{}`, `\section{}`, `\subsection{}`, `\textbf{}`, `\textit{}`, item lists, and simple inline/display math.
+- Responsive, single-screen desktop layout with separate tinted editor and assistant panels.
 
 ## Architecture
 
@@ -50,6 +59,8 @@ npm run dev
 ```
 
 The Vite app runs on `http://localhost:5173` and proxies `/api/*` to Wrangler on `http://localhost:8787`. The app includes a default sample LaTeX document on first launch.
+
+Workers AI may not run in local Wrangler mode, depending on the environment. The Worker includes a deterministic fallback so the UI remains testable locally.
 
 ## Cloudflare Setup
 
@@ -89,6 +100,14 @@ Workers AI is configured with:
 binding = "AI"
 ```
 
+## CI/CD
+
+The repository includes a GitHub Actions workflow at `.github/workflows/deploy.yml`.
+
+- Pull requests run `npm ci` and `npm run build`.
+- Pushes to `main` run the same build and then deploy with Wrangler.
+- Deployment uses `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` GitHub repository secrets.
+
 ## API Routes
 
 - `POST /api/ai/edit`
@@ -98,6 +117,7 @@ binding = "AI"
 - `GET /api/documents`
 - `POST /api/messages`
 - `GET /api/messages/:documentId`
+- `DELETE /api/messages/:documentId`
 
 ## Example Use Cases
 
