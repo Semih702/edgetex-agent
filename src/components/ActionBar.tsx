@@ -154,7 +154,7 @@ export function ActionBar({
         ) : (
           <Save aria-hidden="true" size={16} />
         )}
-        <span>{isSaving ? "Saving" : isDirty ? "Save Document" : "Saved"}</span>
+        <span>{isSaving ? "Saving" : isDirty ? "Save" : "Saved"}</span>
       </button>
     </div>
   );

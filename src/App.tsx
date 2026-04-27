@@ -304,7 +304,6 @@ function App() {
       <header className="app-header">
         <div>
           <h1>EdgeTex Agent</h1>
-          <p>{documentTitle}</p>
         </div>
         <div className="status-stack">
           <span className={isDirty ? "status-dot dirty" : "status-dot"} />
