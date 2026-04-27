@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActionBar } from "./components/ActionBar";
 import { ChatPanel } from "./components/ChatPanel";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { EditorPanel } from "./components/EditorPanel";
 import { PreviewPanel } from "./components/PreviewPanel";
 import {
@@ -52,6 +53,15 @@ const modePrefix: Record<AiMode, string> = {
   review: "Review Formatting"
 };
 
+interface ConfirmationState {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  tone?: "default" | "danger";
+  resolve: (confirmed: boolean) => void;
+}
+
 function App() {
   const [content, setContent] = useState(DEFAULT_DOCUMENT);
   const [documentId, setDocumentId] = useState<string | null>(null);
@@ -65,6 +75,7 @@ function App() {
   const [isDirty, setIsDirty] = useState(true);
   const [status, setStatus] = useState("Sample loaded");
   const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
 
   const previewBlocks = useMemo(() => parseLatexPreview(content), [content]);
 
@@ -154,13 +165,35 @@ function App() {
     return document.id;
   }
 
+  function requestConfirmation(
+    options: Omit<ConfirmationState, "resolve">
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      setConfirmation({ ...options, resolve });
+    });
+  }
+
+  function closeConfirmation(confirmed: boolean) {
+    const current = confirmation;
+    setConfirmation(null);
+    current?.resolve(confirmed);
+  }
+
   async function handleOpenDocument(nextDocumentId: string) {
     if (nextDocumentId === documentId) {
       return;
     }
 
-    if (isDirty && !window.confirm("You have unsaved changes. Open another document anyway?")) {
-      return;
+    if (isDirty) {
+      const confirmed = await requestConfirmation({
+        title: "Open saved document?",
+        message: "You have unsaved changes in the current document. Opening another document will discard them.",
+        confirmLabel: "Open document"
+      });
+
+      if (!confirmed) {
+        return;
+      }
     }
 
     setError(null);
@@ -183,9 +216,17 @@ function App() {
     }
   }
 
-  function handleNewDocument() {
-    if (isDirty && !window.confirm("You have unsaved changes. Create a new document anyway?")) {
-      return;
+  async function handleNewDocument() {
+    if (isDirty) {
+      const confirmed = await requestConfirmation({
+        title: "Create new document?",
+        message: "You have unsaved changes. Starting a new document will discard the current draft.",
+        confirmLabel: "Create new"
+      });
+
+      if (!confirmed) {
+        return;
+      }
     }
 
     setContent(createNewDocumentTemplate());
@@ -200,8 +241,16 @@ function App() {
   }
 
   async function handleImportDocument(file: File) {
-    if (isDirty && !window.confirm("You have unsaved changes. Import a file anyway?")) {
-      return;
+    if (isDirty) {
+      const confirmed = await requestConfirmation({
+        title: "Import file?",
+        message: "You have unsaved changes. Importing this file will replace the current editor contents.",
+        confirmLabel: "Import file"
+      });
+
+      if (!confirmed) {
+        return;
+      }
     }
 
     try {
@@ -305,7 +354,14 @@ function App() {
       return;
     }
 
-    if (!window.confirm("Clear the chat history for this document?")) {
+    const confirmed = await requestConfirmation({
+      title: "Clear chat history?",
+      message: "This will remove the assistant conversation for this document. The LaTeX document itself will not change.",
+      confirmLabel: "Clear chat",
+      tone: "danger"
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -369,6 +425,18 @@ function App() {
           onSend={handleSend}
         />
       </main>
+
+      {confirmation ? (
+        <ConfirmDialog
+          cancelLabel={confirmation.cancelLabel}
+          confirmLabel={confirmation.confirmLabel}
+          message={confirmation.message}
+          onCancel={() => closeConfirmation(false)}
+          onConfirm={() => closeConfirmation(true)}
+          title={confirmation.title}
+          tone={confirmation.tone}
+        />
+      ) : null}
     </div>
   );
 }
