@@ -606,8 +606,8 @@ button:disabled {
 }
 
 .dialog-button.danger {
-  background: #c2412f;
-  border-color: #c2412f;
+  background: #dc2626;
+  border-color: #dc2626;
   color: #ffffff;
 }
 

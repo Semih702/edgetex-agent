@@ -18,12 +18,13 @@ export function ConfirmDialog({
   onConfirm
 }: ConfirmDialogProps) {
   return (
-    <div className="modal-backdrop" role="presentation">
+    <div className="modal-backdrop" onClick={onCancel} role="presentation">
       <div
         aria-describedby="confirm-dialog-message"
         aria-labelledby="confirm-dialog-title"
         aria-modal="true"
         className="confirm-dialog"
+        onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
         <div className="confirm-dialog-header">
