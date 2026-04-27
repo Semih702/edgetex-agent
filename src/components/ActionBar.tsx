@@ -140,22 +140,22 @@ export function ActionBar({
             </button>
           );
         })}
-      </div>
 
-      <button
-        className="save-button"
-        disabled={isSaving}
-        onClick={onSave}
-        title="Save Document"
-        type="button"
-      >
-        {isSaving ? (
-          <BookOpenCheck aria-hidden="true" size={16} />
-        ) : (
-          <Save aria-hidden="true" size={16} />
-        )}
-        <span>{isSaving ? "Saving" : isDirty ? "Save" : "Saved"}</span>
-      </button>
+        <button
+          className="save-button"
+          disabled={isSaving}
+          onClick={onSave}
+          title="Save Document"
+          type="button"
+        >
+          {isSaving ? (
+            <BookOpenCheck aria-hidden="true" size={16} />
+          ) : (
+            <Save aria-hidden="true" size={16} />
+          )}
+          <span>{isSaving ? "Saving" : isDirty ? "Save" : "Saved"}</span>
+        </button>
+      </div>
     </div>
   );
 }
