@@ -126,8 +126,13 @@ button:disabled {
 .document-select {
   background: #ffffff;
   min-height: 38px;
-  min-width: 190px;
+  min-width: 240px;
   padding: 8px 34px 8px 11px;
+}
+
+.compact-tool {
+  min-height: 34px;
+  padding: 7px 10px;
 }
 
 .tool-button {

@@ -12,6 +12,7 @@ import {
   listDocuments,
   updateDocument
 } from "./lib/api";
+import { downloadTexFile, exportPreviewPdf } from "./lib/export";
 import { inferDocumentTitle, parseLatexPreview } from "./lib/preview";
 import type { AiMode, ChatMessage, DocumentRecord, EditResponse } from "./types";
 
@@ -223,18 +224,20 @@ function App() {
 
   function handleDownloadDocument() {
     const title = inferDocumentTitle(content);
-    const fileName = `${slugify(title)}.tex`;
-    const blob = new Blob([content], { type: "application/x-tex;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = fileName;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const fileName = downloadTexFile(content, title);
     setStatus(`Downloaded ${fileName}`);
+  }
+
+  function handleExportPdf() {
+    setError(null);
+
+    try {
+      const title = inferDocumentTitle(content);
+      const fileName = exportPreviewPdf(content, title);
+      setStatus(`Preparing ${fileName}`);
+    } catch (pdfError) {
+      setError(readErrorMessage(pdfError, "Could not export PDF."));
+    }
   }
 
   async function handleSend() {
@@ -317,6 +320,7 @@ function App() {
         isSaving={isSaving}
         mode={mode}
         onDownloadDocument={handleDownloadDocument}
+        onExportPdf={handleExportPdf}
         onImportDocument={handleImportDocument}
         onModeChange={setMode}
         onNewDocument={handleNewDocument}
@@ -401,15 +405,6 @@ function upsertDocument(documents: DocumentRecord[], document: DocumentRecord): 
 
 function stripExtension(fileName: string): string {
   return fileName.replace(/\.[^.]+$/u, "");
-}
-
-function slugify(value: string): string {
-  const slug = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug || "edgetex-document";
 }
 
 export default App;

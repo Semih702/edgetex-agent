@@ -1,6 +1,7 @@
 import {
   BookOpenCheck,
   Download,
+  FileDown,
   FilePlus2,
   GraduationCap,
   ListChecks,
@@ -24,6 +25,7 @@ interface ActionBarProps {
   onOpenDocument: (id: string) => void;
   onImportDocument: (file: File) => void;
   onDownloadDocument: () => void;
+  onExportPdf: () => void;
   onSave: () => void;
 }
 
@@ -47,13 +49,14 @@ export function ActionBar({
   onOpenDocument,
   onImportDocument,
   onDownloadDocument,
+  onExportPdf,
   onSave
 }: ActionBarProps) {
   return (
     <div className="action-bar" aria-label="Document actions">
       <div className="file-group" aria-label="File actions">
         <button
-          className="tool-button"
+          className="tool-button compact-tool"
           disabled={isBusy || isSaving}
           onClick={onNewDocument}
           title="New Document"
@@ -63,9 +66,9 @@ export function ActionBar({
           <span>New</span>
         </button>
 
-        <label className="tool-button import-button" title="Import .tex">
+        <label className="tool-button compact-tool import-button" title="Import .tex">
           <Upload aria-hidden="true" size={16} />
-          <span>Import .tex</span>
+          <span>Import</span>
           <input
             accept=".tex,text/plain"
             disabled={isBusy || isSaving}
@@ -81,13 +84,23 @@ export function ActionBar({
         </label>
 
         <button
-          className="tool-button"
+          className="tool-button compact-tool"
           onClick={onDownloadDocument}
           title="Download .tex"
           type="button"
         >
           <Download aria-hidden="true" size={16} />
-          <span>Download .tex</span>
+          <span>.tex</span>
+        </button>
+
+        <button
+          className="tool-button compact-tool"
+          onClick={onExportPdf}
+          title="Export PDF from lightweight preview"
+          type="button"
+        >
+          <FileDown aria-hidden="true" size={16} />
+          <span>PDF</span>
         </button>
 
         <select
