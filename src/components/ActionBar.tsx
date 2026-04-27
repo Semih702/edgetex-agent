@@ -1,20 +1,29 @@
 import {
   BookOpenCheck,
+  Download,
+  FilePlus2,
   GraduationCap,
   ListChecks,
   Save,
   Sparkles,
+  Upload,
   Wand2,
   Wrench
 } from "lucide-react";
-import type { AiMode } from "../types";
+import type { AiMode, DocumentRecord } from "../types";
 
 interface ActionBarProps {
   mode: AiMode;
+  documentId: string | null;
+  documents: DocumentRecord[];
   isBusy: boolean;
   isSaving: boolean;
   isDirty: boolean;
   onModeChange: (mode: AiMode) => void;
+  onNewDocument: () => void;
+  onOpenDocument: (id: string) => void;
+  onImportDocument: (file: File) => void;
+  onDownloadDocument: () => void;
   onSave: () => void;
 }
 
@@ -28,14 +37,79 @@ const actions = [
 
 export function ActionBar({
   mode,
+  documentId,
+  documents,
   isBusy,
   isSaving,
   isDirty,
   onModeChange,
+  onNewDocument,
+  onOpenDocument,
+  onImportDocument,
+  onDownloadDocument,
   onSave
 }: ActionBarProps) {
   return (
     <div className="action-bar" aria-label="Document actions">
+      <div className="file-group" aria-label="File actions">
+        <button
+          className="tool-button"
+          disabled={isBusy || isSaving}
+          onClick={onNewDocument}
+          title="New Document"
+          type="button"
+        >
+          <FilePlus2 aria-hidden="true" size={16} />
+          <span>New</span>
+        </button>
+
+        <label className="tool-button import-button" title="Import .tex">
+          <Upload aria-hidden="true" size={16} />
+          <span>Import .tex</span>
+          <input
+            accept=".tex,text/plain"
+            disabled={isBusy || isSaving}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                onImportDocument(file);
+              }
+              event.target.value = "";
+            }}
+            type="file"
+          />
+        </label>
+
+        <button
+          className="tool-button"
+          onClick={onDownloadDocument}
+          title="Download .tex"
+          type="button"
+        >
+          <Download aria-hidden="true" size={16} />
+          <span>Download .tex</span>
+        </button>
+
+        <select
+          aria-label="Open saved document"
+          className="document-select"
+          disabled={documents.length === 0 || isBusy || isSaving}
+          onChange={(event) => {
+            if (event.target.value) {
+              onOpenDocument(event.target.value);
+            }
+          }}
+          value={documentId ?? ""}
+        >
+          <option value="">Open saved...</option>
+          {documents.map((document) => (
+            <option key={document.id} value={document.id}>
+              {document.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="action-group" role="group" aria-label="AI edit modes">
         {actions.map((action) => {
           const Icon = action.icon;
@@ -72,4 +146,3 @@ export function ActionBar({
     </div>
   );
 }
-

@@ -54,6 +54,7 @@ function App() {
   const [content, setContent] = useState(DEFAULT_DOCUMENT);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [documentTitle, setDocumentTitle] = useState("Sample Document");
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [instruction, setInstruction] = useState("");
   const [mode, setMode] = useState<AiMode>("improve");
@@ -71,6 +72,7 @@ function App() {
     async function boot() {
       try {
         const { documents } = await listDocuments();
+        setDocuments(documents);
         const lastId = window.localStorage.getItem(LAST_DOCUMENT_KEY);
         const selected = documents.find((document) => document.id === lastId) ?? documents[0];
 
@@ -108,6 +110,7 @@ function App() {
     setDocumentId(document.id);
     setDocumentTitle(document.title);
     setContent(document.content);
+    setDocuments((current) => upsertDocument(current, document));
     window.localStorage.setItem(LAST_DOCUMENT_KEY, document.id);
   }
 
@@ -147,6 +150,91 @@ function App() {
     applyDocument(document);
     setIsDirty(false);
     return document.id;
+  }
+
+  async function handleOpenDocument(nextDocumentId: string) {
+    if (nextDocumentId === documentId) {
+      return;
+    }
+
+    if (isDirty && !window.confirm("You have unsaved changes. Open another document anyway?")) {
+      return;
+    }
+
+    setError(null);
+    setStatus("Loading document");
+
+    try {
+      const [{ document }, { messages: savedMessages }] = await Promise.all([
+        getDocument(nextDocumentId),
+        getMessages(nextDocumentId)
+      ]);
+
+      applyDocument(document);
+      setMessages(savedMessages);
+      setInstruction("");
+      setIsDirty(false);
+      setStatus("Loaded saved document");
+    } catch (openError) {
+      setError(readErrorMessage(openError, "Could not open document."));
+      setStatus("Open failed");
+    }
+  }
+
+  function handleNewDocument() {
+    if (isDirty && !window.confirm("You have unsaved changes. Create a new document anyway?")) {
+      return;
+    }
+
+    setContent(createNewDocumentTemplate());
+    setDocumentId(null);
+    setDocumentTitle("Untitled LaTeX Document");
+    setMessages([]);
+    setInstruction("");
+    setIsDirty(true);
+    setError(null);
+    setStatus("New document");
+    window.localStorage.removeItem(LAST_DOCUMENT_KEY);
+  }
+
+  async function handleImportDocument(file: File) {
+    if (isDirty && !window.confirm("You have unsaved changes. Import a file anyway?")) {
+      return;
+    }
+
+    try {
+      const importedContent = await file.text();
+      const importedTitle = inferDocumentTitle(importedContent);
+      setContent(importedContent);
+      setDocumentId(null);
+      setDocumentTitle(
+        importedTitle === "Untitled LaTeX Document" ? stripExtension(file.name) : importedTitle
+      );
+      setMessages([]);
+      setInstruction("");
+      setIsDirty(true);
+      setError(null);
+      setStatus(`Imported ${file.name}`);
+      window.localStorage.removeItem(LAST_DOCUMENT_KEY);
+    } catch (importError) {
+      setError(readErrorMessage(importError, "Could not import file."));
+    }
+  }
+
+  function handleDownloadDocument() {
+    const title = inferDocumentTitle(content);
+    const fileName = `${slugify(title)}.tex`;
+    const blob = new Blob([content], { type: "application/x-tex;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setStatus(`Downloaded ${fileName}`);
   }
 
   async function handleSend() {
@@ -222,11 +310,17 @@ function App() {
       </header>
 
       <ActionBar
+        documentId={documentId}
+        documents={documents}
         isBusy={isBusy}
         isDirty={isDirty}
         isSaving={isSaving}
         mode={mode}
+        onDownloadDocument={handleDownloadDocument}
+        onImportDocument={handleImportDocument}
         onModeChange={setMode}
+        onNewDocument={handleNewDocument}
+        onOpenDocument={handleOpenDocument}
         onSave={handleSave}
       />
 
@@ -278,6 +372,44 @@ function defaultInstruction(mode: AiMode): string {
 
 function readErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function createNewDocumentTemplate(): string {
+  return String.raw`\documentclass{article}
+\usepackage{amsmath}
+
+\title{Untitled LaTeX Document}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Start writing here.
+
+\end{document}`;
+}
+
+function upsertDocument(documents: DocumentRecord[], document: DocumentRecord): DocumentRecord[] {
+  const next = documents.filter((item) => item.id !== document.id);
+  return [document, ...next].sort(
+    (left, right) =>
+      new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+  );
+}
+
+function stripExtension(fileName: string): string {
+  return fileName.replace(/\.[^.]+$/u, "");
+}
+
+function slugify(value: string): string {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "edgetex-document";
 }
 
 export default App;

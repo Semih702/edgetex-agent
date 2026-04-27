@@ -14,6 +14,7 @@ EdgeTex Agent is a lightweight AI-assisted LaTeX editor for the Cloudflare AI ap
 - Single-page React editor named EdgeTex Agent.
 - Left LaTeX editor, right lightweight preview, and assistant panel.
 - Actions for Generate LaTeX, Improve Writing, Fix LaTeX, Make Academic, Review Formatting, and Save Document.
+- Document controls for creating a new document, opening saved D1 documents, importing `.tex` files, and downloading the current document as `.tex`.
 - Workers AI route with a strict JSON prompt and safe JSON parsing.
 - Deterministic local fallback when Workers AI is unavailable.
 - D1-backed document save/load and chat history.
@@ -121,4 +122,3 @@ binding = "AI"
 - Cloudflare Workflows for longer multi-step document processing.
 - R2 for storing generated files.
 - More advanced prompt-injection safeguards.
-
