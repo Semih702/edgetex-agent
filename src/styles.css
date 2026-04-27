@@ -42,20 +42,14 @@ button:disabled {
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  margin: 0 auto 14px;
+  margin: 0 auto 12px;
   max-width: 1680px;
 }
 
 .app-header h1 {
-  font-size: 24px;
+  font-size: 23px;
   line-height: 1.1;
   margin: 0;
-}
-
-.app-header p {
-  color: #666b73;
-  margin: 4px 0 0;
-  overflow-wrap: anywhere;
 }
 
 .status-stack {
@@ -84,23 +78,29 @@ button:disabled {
 .action-bar {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: space-between;
-  margin: 0 auto 12px;
+  flex-wrap: nowrap;
+  gap: 8px;
+  justify-content: flex-start;
+  margin: 0 auto 10px;
   max-width: 1680px;
+  min-width: 0;
+  overflow: visible;
 }
 
 .file-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .action-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .tool-button,
@@ -112,10 +112,11 @@ button:disabled {
   border-radius: 8px;
   color: #2b2f35;
   display: inline-flex;
-  gap: 7px;
+  font-size: 14px;
+  gap: 6px;
   justify-content: center;
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: 36px;
+  padding: 7px 10px;
   transition:
     background 150ms ease,
     border-color 150ms ease,
@@ -130,14 +131,16 @@ button:disabled {
   background-position: right 16px center;
   background-repeat: no-repeat;
   background-size: 16px;
-  min-height: 38px;
-  min-width: 260px;
-  padding: 8px 46px 8px 12px;
+  flex: 0 1 260px;
+  font-size: 14px;
+  min-height: 36px;
+  min-width: 220px;
+  padding: 7px 46px 7px 12px;
 }
 
 .compact-tool {
-  min-height: 34px;
-  padding: 7px 10px;
+  min-height: 36px;
+  padding: 7px 9px;
 }
 
 .tool-button {
@@ -171,6 +174,8 @@ button:disabled {
   color: #ffffff;
   flex: 0 0 auto;
   font-weight: 700;
+  margin-left: auto;
+  padding-inline: 12px;
 }
 
 .save-button:hover {
@@ -192,7 +197,7 @@ button:disabled {
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(320px, 1.15fr) minmax(320px, 0.95fr) minmax(300px, 0.72fr);
-  height: calc(100vh - 142px);
+  height: calc(100vh - 112px);
   margin: 0 auto;
   max-width: 1680px;
   min-height: 620px;
